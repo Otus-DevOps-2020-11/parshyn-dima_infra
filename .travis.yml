@@ -1,0 +1,21 @@
+{
+  "language": "shell",
+  "os": [
+    "linux"
+  ],
+  "dist": "trusty",
+  "before_install": [
+    "curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-11/run.sh | bash"
+  ],
+  "notifications": {
+    "slack": [
+      {
+        "rooms": [
+          {
+            "secure": "EnYTXmzEbJLaogkKNg1CGQmxlK8oDgKbhyPP7ezNCSPF3/G5wpf1i/DlcaEXPE3c095HORSo/l8eCrtw6LrQZrjMpoWRLsrFPWGSSymsHxpImfdVhpb16ZmdTwEkCx2ILU/cB/NWU0CnBlrNcYclr3weobYzv1XO+DNyS+ULRsS5Aog3JOPD/KmsW7IN0lGmB2QYc0vclbJqDex6inIThoRSgr3NyRqLHrArkdk0qC/qmwImZWEJO9dZNDTqxOIK5XauVm0My5FmgMkb2Y6xoJf3uvEwZqP4YgQi3vVkAcHt8uXOvndrzZHrPhe4SQYtZA1W54s0oJ5+LeazMt6+LFtJFV17m7w2uaSJBWxOnojUqxyGAf/D14HfUy7nsIjZHX65MTuqHtq4KbNDQ0HGrTrSgkdd/drqZQzLMoqn1t/1Qf3zg7X8y4vFcvFPVlea2W1uUct0HTd44IB1JXYFuoSMvaKjmizeiA74TVaQVyuymGLK+oCSsuoqxFltOkVgfr7VbXXv/iLkOb14ZFKXtYUKyEIw0x4QzOWGjuzgCoPHdOB/AcWeH1R/guumspx1N0HMCAircfDzU2y8FQOsuK00DTX3GK0nFi+A6xCLbUWkrxXxVsBJ0MZZppI/cKx9vUXK2ak5tb3A897Cjzvu2KLakHZnJOiM2DRGGXfsDXo="
+          }
+        ]
+      }
+    ]
+  }
+}
