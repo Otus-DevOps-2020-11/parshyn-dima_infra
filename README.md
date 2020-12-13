@@ -20,9 +20,9 @@ Host *
 в скрипт.
 
 IP серверов:
-
+```
 bastion_IP = 130.193.40.162
 someinternalhost_IP = 10.129.0.29
-
+```
 Для настройки ssl сертификата использовал следующее доменное имя **bastion.130.193.40.162.xip.io**.
 Данное dns имя внес в настройки settings - Lets Encrypt Domain.
