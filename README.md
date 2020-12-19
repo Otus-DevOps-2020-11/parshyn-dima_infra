@@ -55,6 +55,7 @@ yc compute instance create \
  - apt-transport-https
  - ca-certificates
  - git
+
 Без данных пакетов деплой в TravicCI заканчивается ошибкой.
 
 ### Задание со *
