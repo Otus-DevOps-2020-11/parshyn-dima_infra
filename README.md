@@ -33,7 +33,7 @@ someinternalhost_IP = 10.129.0.29
 ### Деплой тестового приложения
 
 ```
-testapp_IP = 178.154.226.247
+testapp_IP = 178.154.246.93
 testapp_port = 9292
 ```
 
@@ -67,3 +67,97 @@ yc compute instance create \
 Для проверки необходимо скачать файл setup.sh и выполнить команду
 
         bash setup.sh
+
+## Домашняя работа №7
+### Сборка образов VM при помощи Packer
+
+Установил Packer.
+Создал сервисный аккаунт
+Для создания через CLI сервисного аккаунта, необходимы настройки профиля
+```
+yc config list
+```
+Добавил переменные с именем пользователя и ID каталога
+SVC_ACCT=packer
+FOLDER_ID=
+```
+yc iam service-account create --name $SVC_ACCT --folder-id $FOLDER_ID
+```
+Назначил права для сервисного аккаунта
+```
+ACCT_ID=$(yc iam service-account get $SVC_ACCT | grep ^id | awk '{print $2}')
+yc resource-manager folder add-access-binding --id $FOLDER_ID --role editor --service-account-id $ACCT_ID
+```
+Создал service account key file (файл добавил .gitignore)
+```
+yc iam key create --service-account-id $ACCT_ID --output ./key.json
+```
+Создал файл ubuntu16.json. Данный файл описывает параметры и этапы сборки образа.
+Заменил информацию на свою в "service_account_key_file" и "folder_id".
+Добавил два новых параметра  "subnet_id" (зайти в консоль в настройки сети и найти ip конкретной зоны, в моём случае это ru-central1-a, так как он указывался в профиле) и "use_ipv4_nat". ID сетей можно посмотреть командой
+```
+yc vpc subnet list
+```
+В скриптах удалил во всех строках sudo и в install_ruby.sh первой строкой добавил **apt list --upgradable** без этой команды сборка заканчивалась ошибкой.
+
+Проверка синтаксиса файла для сборки (из дериктории packer)
+```
+packer validate ./ubuntu16.json
+```
+Запуск сборки (из дериктории packer)
+```
+packer build ./ubuntu16.json
+```
+
+После сборки образ появится в соответствующем меню в консоли.
+В качестве загрузочного диска выбрал данный образ и создал ВМ.
+Установил приложение из прошлого ДЗ, команды из скрипта deploy.sh
+Проверка http://<внешний IP машины>:9292
+
+Параметризовал созданный шаблон.
+Создал файл variables.json с переменными и добавил в .gitignore.
+Добавил следующие параметры:
+```
+    "folder_id":
+    "source_image_id":
+    "service_account_key_file":
+    "source_image_family"
+    "subnet_id"
+```
+
+### Задания со *
+Для создания образа с уже развернутым приложением создал шаблон **immutable.json**.
+Для установки приложения использовал скрипты из предыдущего ДЗ. Для запуска web сервера Puma создал файл systemd unit, puma.service.
+По аналогии из предыдущего занятия создал скрипт с помощью, которого можно развернуть ВМ на основе собранного образа.
+
+### Проверка
+
+Скачать git репозиторий
+```
+git clone git@github.com:Otus-DevOps-2020-11/parshyn-dima_infra.git
+```
+Перейти в директорию **packer**
+Для сборки образа без развернутого приложения необходимо выполнить
+```
+packer build -var-file=variables.json ubuntu16.json
+```
+Для сборки образа с развернутым приложением необходимо выполнить
+```
+packer build -var-file=variables.json immutable.json
+```
+В текущей директории должен быть создан файл с параметрами, заполненные собственными значениями.
+```
+    "folder_id":
+    "source_image_id":
+    "service_account_key_file":
+    "source_image_family"
+    "subnet_id"
+```
+Для развертывания ВМ на основе собранных образов, необходимо запустить скрипт
+```
+bash ../config-scripts/create-reddit-vm.sh
+```
+Предварительно заменив параметр **image-id** на своё значение. Получить список образов в каталоге по умолчанию можно
+```
+yc compute image list
+```

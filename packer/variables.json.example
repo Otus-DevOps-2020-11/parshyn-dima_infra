@@ -1,0 +1,7 @@
+{
+    "folder_id": "uyui4vn75646asd6a5s",
+    "source_image_id": "fd8mq9lasd4894a984sd",
+    "service_account_key_file": "../key.json",
+    "source_image_family": "ubuntu-1604-lts",
+    "subnet_id": "asfakfj87as9d87asd"
+  }
