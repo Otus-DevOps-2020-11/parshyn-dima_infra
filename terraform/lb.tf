@@ -2,10 +2,6 @@ resource "yandex_lb_target_group" "reddit_app_tg" {
   name      = "reddit-app-tg"
   region_id = "ru-central1"
 
-  #target {
-  #  subnet_id = var.subnet_id
-  #  address   = yandex_compute_instance.app[0].network_interface.0.ip_address
-  #}
   dynamic target {
     for_each = yandex_compute_instance.app.*.network_interface.0.ip_address
     content {
@@ -19,8 +15,8 @@ resource "yandex_lb_network_load_balancer" "reddit_app_lb" {
   name = "reddit-app-lb"
 
   listener {
-    name = "reddit-app-listener"
-    port = 80
+    name        = "reddit-app-listener"
+    port        = 80
     target_port = 9292
     external_address_spec {
       ip_version = "ipv4"

@@ -24,6 +24,6 @@ variable service_account_key_file {
 }
 
 variable "instance_size" {
-  type        = number
+  type    = number
   default = 1
 }

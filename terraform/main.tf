@@ -8,8 +8,8 @@ provider "yandex" {
   zone                     = var.zone
 }
 resource "yandex_compute_instance" "app" {
-  count  = var.instance_size
-  name   = "reddit-app-${count.index}"
+  count = var.instance_size
+  name  = "reddit-app-${count.index}"
 
   metadata = {
     ssh-keys = "ubuntu:${file(var.public_key_path)}"
