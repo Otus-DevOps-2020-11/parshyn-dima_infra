@@ -195,3 +195,100 @@ variable "private_key_path" {}
 
 ### Задание с ** (3)
 Настроил создание инстансов с помощью переменной count
+
+## Домашняя работа №9
+
+Развернул ВМ с отдельным vpc.
+Связал создаваемые ресурсы с данным vpc. Тем самым мы создали зависимость между ресурсами. Так как один ресурс ссылается на другой, при развертывании эти зависимости учитываются. Сначала создаётся сеть, затем подсеть, затем инстанс.
+
+```
+network_id     = yandex_vpc_network.app-network.id
+```
+Создал два файла db.json и app.json, скопировал содержимое файла ubuntu16.json. Это новые шаблоны для образов Packer. В каждом оставил свой провиженер.
+
+Разбил main.tf на разные файлы (app.tf, db.tf, vpc.tf)
+
+### Модули
+
+Далее работа с модулями, это своего рода шаблоны для ВМ. Модули создаём для bd и app. В директорию модулю добавляются необходимые файлы (main.tf, variables.tf, outputs.tf).
+
+Далее необходимо создать инфраструктуры для stage и prod на основе существующих модулей. Для stage и prod создаются отдельные каталоги в которых создаются файлы (main.tf, variables.tf, outputs.tf, terraform.tfvars, key.json) В main указывается провайдер, и описывается модуль. В модуле можно указывать переменные из другого модуля. Например, чтобы указать ip базы данных для приложения, создавалась переменная, которая брала данные из модуля db.
+```
+database_url     = "${module.db.external_ip_address_db}"
+```
+### Задание со *
+
+Для хранения состояний создал через вэб консоль Object Storage и настроил хранение tfstate в данном storage. Хорошая инструкция в официальной документации. https://cloud.yandex.ru/docs/solutions/infrastructure-management/terraform-state-storage
+Настройки для хранения сохранены в backend.tf
+```
+terraform {
+  backend "s3" {
+    endpoint                    = "storage.yandexcloud.net"
+    bucket                      = "dparshin-hw09-tfstate"
+    region                      = "ru-central1"
+    key                         = "prod/terraform.tfstate"
+    skip_region_validation      = true
+    skip_credentials_validation = true
+  }
+}
+```
+Доступ открыл только для авторизованных пользователей.
+
+### Задание со **
+
+Так как мы разделили инстансы на BD и APP, то приложение не работает. Для того чтобы указать приложению адрес БД, необходимо:
+
+1) В модуле app указать ip базы данных для приложения.
+```
+database_url     = "${module.db.external_ip_address_db}"
+```
+
+2) Для запуска службы puma с ip БД, необходимо модифицировать файл systemd
+```
+[Unit]
+Description=Puma HTTP Server
+After=network.target
+
+[Service]
+Environment="DATABASE_URL=${database_url}"
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/reddit
+ExecStart=/bin/bash -lc 'puma'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+3) Для того чтобы передавать данные из модуля в ВМ, воспользовался функцией templatefile. Создал новые проженеры для деплоя приложения
+```
+provisioner "file" {
+    content     = templatefile("${path.module}/files/puma.service.tmpl", { database_url = "${var.database_url}" })
+    destination = "/tmp/puma.service"
+  }
+
+  provisioner "remote-exec" {
+    script = "${path.module}/files/deploy.sh"
+  }
+```
+
+4) В базе данных необходимо было открыть доступ с внешних адресов, по умолчанию доступ через localhost. Для этого добавил в terraform/modules/db/main.tf
+```
+provisioner "remote-exec" {
+    inline = [
+      "sudo sed -i 's/ *bindIp:.*/  bindIp: 0.0.0.0/' /etc/mongod.conf",
+      "sudo systemctl restart mongod",
+    ]
+  }
+```
+Так как все виртуалки находятся за NAT, то они имеют только внутренние адреса, поэтому пришлось вписывать 0.0.0.0 (с любого ip).
+
+5) Возникла проблема с запуском одновременно stage и prod, так как имена ВМ совладают. Для этого в main.tf (prod и stage) добавил
+```
+locals {
+  app_name = "reddit-app-${var.environment}"
+  db_name  = "reddit-db-${var.environment}"
+}
+```
+Теперь в конце имени ВМ добавляется stage или prod
