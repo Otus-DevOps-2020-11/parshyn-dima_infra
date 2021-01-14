@@ -1,8 +1,0 @@
-{
-    "id": "fsd8f789sd7f",
-    "service_account_id": "sdf7897s9d8f79",
-    "created_at": "2020-12-20T18:58:48.129122Z",
-    "key_algorithm": "RSA_2048",
-    "public_key": "-----BEGIN PUBLIC KEY-----\\n-----END PUBLIC KEY-----\n",
-    "private_key": "-----BEGIN PRIVATE KEY-----\\n-----END PRIVATE KEY-----\n"
- }
