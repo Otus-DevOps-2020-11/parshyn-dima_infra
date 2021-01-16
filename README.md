@@ -292,3 +292,79 @@ locals {
 }
 ```
 Теперь в конце имени ВМ добавляется stage или prod
+
+## Домашняя работа №10
+
+Установил ansible 2.9.16 через dnf
+```
+sudo dnf inatsll ansible
+```
+
+Запустил инстансы из директории stage
+Создал файл inventory в директории ansible
+```
+appserver ansible_host=<external_ip_reddit-app-stage> ansible_user=ubuntu ansible_private_key_file=~/.ssh/id_rsa.pub
+appserver ansible_host=<external_ip_reddit-db-stage> ansible_user=ubuntu ansible_private_key_file=~/.ssh/id_rsa.pub
+```
+Выполнил команду из директории ansible
+```
+ansible appserver -i ./inventory -m ping
+ansible dbserver -i ./inventory -m ping
+```
+appserver - имя хоста в инвентори
+-i - путь к файлу инвентори
+-m - модуль
+Создал и изменил ansible.cfg, чтобы каждый раз не указывать пользователя, путь к ssh ключу, и файлу инвентори.
+```
+ansible dbserver -m command -a uptime
+```
+Создал в инвентори группы [app] и [db]
+Проверка
+```
+ansible app -m ping
+```
+Создал инвентори в формате yml
+```
+---
+all:
+  children:
+    app:
+      hosts:
+        appserver:
+          ansible_host: 84.201.172.235
+    db:
+      hosts:
+        dbserver:
+          ansible_host: 84.201.128.116
+```
+Проверим, что на app сервере установлены компоненты для работы приложения (ruby и bundler):
+```
+ansible app -m command -a 'ruby -v'
+ansible app -m command -a 'bundler -v'
+```
+Через command нельзя выполнить две команды, так как в нем не работают перенаправления. Для этого необходимо использовать модуль shell
+```
+ansible app -m shell -a 'ruby -v; bundler -v'
+```
+Проверим статус службы
+```
+ansible db -m command -a 'systemctl status mongod'
+ansible db -m shell -a 'systemctl status mongod'
+```
+Это же можно выполнить через модуль systemd или service для более старых систем
+```
+ansible db -m systemd -a name=mongod
+ansible db -m service -a name=mongod
+```
+Преимуществом модулей перед shell командами заключается в том, что модули выдают информацию в качестве набора переменных и его легко парсить, и обрабатывать в дальнейшем.
+Выполнил клонирование репозитория приложения
+```
+ansible app -m git -a 'repo=https://github.com/express42/reddit.git dest=/home/ubuntu/reddit'
+```
+Так как в предыдущем уроке выполнял задание со *, то приложение уже развернуто и никаких изменений не произошло.
+Добавил плейбук clone.yml, который также будет клонировать приложение из github. Так как каталог уже существует, то при выполнение данного прейбука никаких изменений не произошло.
+Если удалить каталог reddit и вновь запустить плайбук, то изменения буду
+```
+ansible app -m command -a 'rm -rf ~/reddit'
+```
+То есть ansible определил, что каталога нет и выполнил плайбук.
