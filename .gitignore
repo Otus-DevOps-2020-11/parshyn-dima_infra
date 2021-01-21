@@ -6,3 +6,6 @@ variables.json
 *.tfvars
 .terraform/
 *.retry
+build.hwm
+build.pwd
+build.pwi
