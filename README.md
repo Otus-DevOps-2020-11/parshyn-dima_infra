@@ -450,6 +450,7 @@ git clone git@github.com:Otus-DevOps-2020-11/parshyn-dima_infra.git
 Ввести в файлах prod/key.json.example, prod/terraform.tfvars.example, stage/key.json.example, stage/terraform.tfvars.example, packer/variables.json.example, packer/key.json.example изменений согласно вашей конфигурации YandexCloud.
 
 **Создать образы packer**
+
 Перейти в каталог packer и выполнить команды в терминале
 ```
 packer build -var-file=variables.json app.json
@@ -458,6 +459,7 @@ packer build -var-file=variables.json db.json
 Будут созданы образы в YC, их необходимо переименовать в YC *reddit-app-base-ansible* и *reddit-db-base-ansible* (в файлах packer имя образа reddit-app-base-{{timestamp}}, чтобы каждый раз оно было разным и образ не нужно было удалять при повторном запуске сборки образа).
 
 **Создать ВМ**
+
 Перейти в каталог terraform/stage и выполнить команду в терминале
 ```
 terraform init
@@ -467,6 +469,7 @@ terraform apply
 На основе созданных образов будут созданы 2 ВМ в YC.
 
 **Деплой приложения**
+
 Заменить IP ВМ на актуальные в файлах inventory.yml и в app.yml заменить значение переменной *db_host* на актуальный внутренний адрес ВМ с базой данных
 Перейти в директорию *ansible* и выполнить команду в терминале
 ```
