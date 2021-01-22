@@ -368,3 +368,109 @@ ansible app -m git -a 'repo=https://github.com/express42/reddit.git dest=/home/u
 ansible app -m command -a 'rm -rf ~/reddit'
 ```
 То есть ansible определил, что каталога нет и выполнил плайбук.
+
+## Домашняя работа №11
+
+**Один playbook, один сценарий**
+
+Закомментировал в модулях терафформ провиженеры.
+Заменил в inventory ansible IP на актуальные.
+Добавил файл reddit_app.yml
+Создал плейбук в нем. Данный плейбук открывает доступ к mongodb со всех адресов (0.0.0.0). Реализуется это с помощью модуля template. Шаблон находится в директории templates/mongod.conf.j2. Тестовый запуск выполняется с помощью команды
+```
+ansible-playbook reddit_app.yml --check --limit db
+```
+Добавим хендлер для перезапуска службы mongod после внесения изменений
+Добавил в директорию files, unit-file puma.service и заменил appuser на ubuntu.
+```
+EnvironmentFile=/home/ubuntu/db_config
+```
+С помощью этой строки Puma сервер обращается в файл db_config, который содержит внутренний IP адрес ВМ базы данных.
+После этого в плейбук добавил модули с деплоем приложения.
+Команды для запуска определенной части playbook (db, app, deploy)
+```
+ansible-playbook reddit_app.yml --limit db --tags db-tag
+ansible-playbook reddit_app.yml --limit app --tags app-tag
+ansible-playbook reddit_app.yml --limit app --tags deploy-tag
+```
+
+**Один плейбук, несколько сценариев**
+
+Создал файл reddit_app2.yml. На основе уже созданного playbook создал новый. Разбил на отдельные сценарии в зависимости от тегов. То есть у каждого сценария свой раздел name, vars, handlers, hosts. Вынес отдельно tags, become.
+```
+ansible-playbook reddit_app2.yml --tags db-tag --check
+ansible-playbook reddit_app2.yml --tags db-tag
+ansible-playbook reddit_app2.yml --tags app-tag --check
+ansible-playbook reddit_app2.yml --tags app-tag
+ansible-playbook reddit_app2.yml --tags deploy-tag --check
+ansible-playbook reddit_app2.yml --tags deploy-tag
+```
+
+**Несколько плейбуков**
+
+Разделил все сценарии на несколько плейбуков (app.yml, db.yml, deploy_app.yml). Назвать файл deploy.yml не получилось, возникала ошибка файла.
+В файле site.yml перечислим все файлы с playbook.
+```
+---
+- import_playbook: db.yml
+- import_playbook: app.yml
+- import_playbook: deploy_app.yml
+```
+Проверка и запуск
+```
+ansible-playbook site.yml --check
+ansible-playbook site.yml
+```
+
+**Провижининг в Packer**
+
+Необходимо заменить провиженеры в Packer с shell на ansible.
+Создал файлы, вместо install_ruby.sh и install_mongodb.sh:
+ansible/packer_app.yml - устанавливает Ruby и Bundler
+ansible/packer_db.yml - добавляет репозиторий MongoDB, устанавливает ее и включает сервис.
+
+Столкнулся с проблемой, при запуске создания образа, во время выполнения playbook была ошибка
+```
+yandex: failed to handshake
+    yandex: fatal: [default]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: Warning: Permanently added '[127.0.0.1]:34579' (RSA) to the list of known hosts.\r\nubuntu@127.0.0.1: Permission denied (publickey).", "unreachable": true}
+```
+Решил добавив в провиженер
+```
+"use_proxy": "false"
+```
+В результате создал два новых образа. На основе данных образов создал ВМ с помощью terraform и выполнил деплой приложения с помощью site.yml.
+
+### Проверка
+
+Скачать данный репозиторий
+```
+git clone git@github.com:Otus-DevOps-2020-11/parshyn-dima_infra.git
+```
+Перейти в каталог parshyn-dima_infra
+Ввести в файлах prod/key.json.example, prod/terraform.tfvars.example, stage/key.json.example, stage/terraform.tfvars.example, packer/variables.json.example, packer/key.json.example изменений согласно вашей конфигурации YandexCloud.
+
+**Создать образы packer**
+Перейти в каталог packer и выполнить команды в терминале
+```
+packer build -var-file=variables.json app.json
+packer build -var-file=variables.json db.json
+```
+Будут созданы образы в YC, их необходимо переименовать в YC *reddit-app-base-ansible* и *reddit-db-base-ansible* (в файлах packer имя образа reddit-app-base-{{timestamp}}, чтобы каждый раз оно было разным и образ не нужно было удалять при повторном запуске сборки образа).
+
+**Создать ВМ**
+Перейти в каталог terraform/stage и выполнить команду в терминале
+```
+terraform init
+terraform plan
+terraform apply
+```
+На основе созданных образов будут созданы 2 ВМ в YC.
+
+**Деплой приложения**
+Заменить IP ВМ на актуальные в файлах inventory.yml и в app.yml заменить значение переменной *db_host* на актуальный внутренний адрес ВМ с базой данных
+Перейти в директорию *ansible* и выполнить команду в терминале
+```
+ansible-playbook site.yml
+```
+
+В результате приложение будет доступно по адресу <Внешний IP reddit-app-stage>:9292
