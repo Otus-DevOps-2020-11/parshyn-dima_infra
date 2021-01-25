@@ -477,3 +477,80 @@ ansible-playbook site.yml
 ```
 
 В результате приложение будет доступно по адресу <Внешний IP reddit-app-stage>:9292
+
+## Домашняя работа №12
+
+Создал с помощью ansible-galaxy init структуру каталогов для ролей stage и прод.
+```
+ansible-galaxy init app
+ansible-galaxy init db
+```
+Распределил по директориям файлы шаблонов и файлов конфигураций. Из playbook перенес раздел tasks в директорию tasks.
+Поэтому в модулях не нужно указывать полный путь к шаблонам и файлам, а достаточно имени. Хендлеры и переменные также выносятся в отдельную директорию. В плейбуках app и db указываем только необходимые роли.
+
+Далее настраиваем файлы для разных окружений (prod и stage). Для каждого окружения создадим свой инвентори файл. В файл конфигурации запишем путь к stage инвентори. В каждом окружении создал директорию group_vars. В нем создаём файлы с переменными.
+
+Добавил роль из ansible-galaxy jdauphant.nginx. Добавил переменные в group_vars
+```
+nginx_sites:
+default:
+- listen 80
+- server_name "reddit"
+- location / {
+proxy_pass http://127.0.0.1:порт_приложения;
+}
+```
+Добавил роль jdauphant.nginx в плайбук app.
+
+**Работа с Ansible Vault**
+
+Создал файл vault.key с помощью команды
+```
+md5sum ansible.cfg | awk '{print $1}' > vault.key
+```
+Добавил плейбук для создания пользователей и создал файл с данными пользователей credentials.yml
+Зашифровал файл с помощью ansible-vault.
+```
+ansible-vault encrypt environments/prod/credentials.yml
+ansible-vault encrypt environments/stage/credentials.yml
+```
+
+### Проверка
+Скачать данный репозиторий
+```
+git clone git@github.com:Otus-DevOps-2020-11/parshyn-dima_infra.git
+```
+Перейти в каталог parshyn-dima_infra
+Ввести в файлах prod/key.json.example, prod/terraform.tfvars.example, stage/key.json.example, stage/terraform.tfvars.example, packer/variables.json.example, packer/key.json.example изменений согласно вашей конфигурации YandexCloud. Измени файл vault.key.example с помощью которого будем шифровать. Все файлы с example необходимо переименовать, убрав .example
+
+**Создать ВМ**
+Перейти в каталог terraform/stage и выполнить команду в терминале
+```
+terraform init
+terraform plan
+terraform apply
+```
+На основе созданных образов будут созданы 2 ВМ в YC.
+
+**Шифрование файлов с паролями**
+Заменить файл ansible/environments/stage/credentials.yml на файл вида
+```
+credentials:
+users:
+admin:
+password: admin123
+groups: sudo
+```
+Зашифровать можно с помошью команд
+```
+ansible-vault encrypt environments/prod/credentials.yml
+ansible-vault encrypt environments/stage/credentials.yml
+```
+
+**Деплой приложения**
+Заменить IP ВМ на актуальные в файлах inventory.yml и в app.yml заменить значение переменной *db_host* на актуальный внутренний адрес ВМ с базой данных
+Перейти в директорию *ansible* и выполнить команду в терминале
+```
+ansible-playbook site.yml
+```
+В результате приложение будет доступно по адресу <Внешний IP reddit-app-stage>:9292
