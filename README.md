@@ -533,6 +533,7 @@ terraform apply
 На основе созданных образов будут созданы 2 ВМ в YC.
 
 **Шифрование файлов с паролями**
+
 Заменить файл ansible/environments/stage/credentials.yml на файл вида
 ```
 credentials:
@@ -548,6 +549,7 @@ ansible-vault encrypt environments/stage/credentials.yml
 ```
 
 **Деплой приложения**
+
 Заменить IP ВМ на актуальные в файлах inventory.yml и в app.yml заменить значение переменной *db_host* на актуальный внутренний адрес ВМ с базой данных
 Перейти в директорию *ansible* и выполнить команду в терминале
 ```
