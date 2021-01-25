@@ -23,7 +23,7 @@ resource "yandex_compute_instance" "app" {
   metadata = {
     ssh-keys = "ubuntu:${file(var.public_key_path)}"
   }
-  connection {
+  /* connection {
     type  = "ssh"
     host  = self.network_interface.0.nat_ip_address
     user  = "ubuntu"
@@ -39,5 +39,5 @@ resource "yandex_compute_instance" "app" {
 
   provisioner "remote-exec" {
     script = "${path.module}/files/deploy.sh"
-  }
+  } */
 }

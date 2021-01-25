@@ -5,3 +5,7 @@ variables.json
 *.tfstate.backup
 *.tfvars
 .terraform/
+*.retry
+build.hwm
+build.pwd
+build.pwi

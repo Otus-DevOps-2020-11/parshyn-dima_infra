@@ -25,7 +25,7 @@ resource "yandex_compute_instance" "db" {
     ssh-keys = "ubuntu:${file(var.public_key_path)}"
   }
 
-  connection {
+/*   connection {
     type  = "ssh"
     host  = self.network_interface.0.nat_ip_address
     user  = "ubuntu"
@@ -33,11 +33,11 @@ resource "yandex_compute_instance" "db" {
     # путь до приватного ключа
     private_key = file(var.private_key_path)
   }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo sed -i 's/ *bindIp:.*/  bindIp: 0.0.0.0/' /etc/mongod.conf",
-      "sudo systemctl restart mongod",
-    ]
-  }
+ */
+#  provisioner "remote-exec" {
+#    inline = [
+#      "sudo sed -i 's/ *bindIp:.*/  bindIp: 0.0.0.0/' /etc/mongod.conf",
+#      "sudo systemctl restart mongod",
+#    ]
+#  }
 }
