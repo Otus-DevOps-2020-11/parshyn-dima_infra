@@ -19,7 +19,7 @@
             "type": "ansible",
             "user": "ubuntu",
             "use_proxy": "false",
-            "playbook_file": "../ansible/packer_app.yml"
+            "playbook_file": "../ansible/old/packer_app.yml"
         }
     ]
 }
