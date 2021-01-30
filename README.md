@@ -561,29 +561,26 @@ ansible-playbook site.yml
 
 ### Vagrantfile
 
-Создал ansible/Vagrantfile. Запустил создание ВМ.
+Создал ansible/Vagrantfile. Команды для работы с vagrant
 ```
-vagrant up
+vagrant up - создание ВМ
 vagrant box list
-vagrant status
-```
-Подключиться к созданной ВМ
-```
-vagrant ssh appserver
+vagrant status - список запущенных ВМ
+vagrant ssh appserver - подключение к ВМ appserver
 ```
 
 ### Провиженеры
 
-Добавил провиженер к DB.
+Добавил провиженер в Vagrantfile для DB.
 Запуcтил провиженер
 ```
 vagrant provision dbserver
 ```
 Добавил плейбук base.yml, в котором описал установку python. И добавил его в site.yml. (Все работало и без этого плейбука)
 Добавил файл db/tasks/install_mongo.yml, перенес в него таски установки MongoDB из packer_db.yml. Добавил тег **install_mongo**. В файл db/tasks/config_mongo.yml добавил таску с настройкой конфига MongoDB.
-Аналогичные действия выполним и для роли app.   В  app/tasks/ruby.yml перенес таски относящиеся к установке ruby. В app/tasks/puma.yml относящиеся к установке puma server.
-Добавил провиженер к APP.
-Параметризировал конфигурацию, чтобы мы могли использовать ее для другого пользователя, не appuser. То есть во всех файлах заменил ubuntu на {{ deploy_user }}.
+Аналогичные действия выполним и для роли app. В app/tasks/ruby.yml перенес таски относящиеся к установке ruby. В app/tasks/puma.yml относящиеся к установке puma server.
+Добавил провиженер в Vagrantfile для APP.
+Параметризировал конфигурацию, чтобы мы могли использовать ее для другого пользователя, не appuser. То есть во всех файлах заменил **ubuntu** на **{{ deploy_user }}**.
 Так как плейбуки выполняются из-под пользователя vagrant, поэтому в vagrantfile прописал
 ```
 ansible.extra_vars = {
@@ -611,15 +608,16 @@ nginx_sites:
       proxy_pass http://127.0.0.1:9292;
     }
 ```
+В итоге при выполнение *vagrant up* бедут созданы две ВМ (db и app). Для доступа к тестовому приложениею необходимо в баузере ввести **http://192.168.56.120/**
 
 ### Тестирование роли
 
-Для тестирования необходимо установить Molecule, Ansible, Testinfra. Рекомендуется все работы по тестированию проводить в virtualenv.
+Для тестирования ролей ansible необходимо установить Molecule, Ansible, Testinfra. Рекомендуется все работы по тестированию проводить в virtualenv.
 Команды выполняются в каталоге проекта. Использовал следующие версии приложений
 molecule 3.2.3 using python 3.9
-    ansible:2.10.5
-    delegated:3.2.3 from molecule
-    vagrant:0.6.1 from molecule_vagrant
+ansible:2.10.5
+delegated:3.2.3 from molecule
+vagrant:0.6.1 from molecule_vagrant
 ```
 pip install virtualenv
 virtualenv venv
