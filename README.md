@@ -556,3 +556,114 @@ ansible-vault encrypt environments/stage/credentials.yml
 ansible-playbook site.yml
 ```
 В результате приложение будет доступно по адресу <Внешний IP reddit-app-stage>:9292
+
+## Домашняя работа №13
+
+### Vagrantfile
+
+Создал ansible/Vagrantfile. Команды для работы с vagrant
+```
+vagrant up - создание ВМ
+vagrant box list
+vagrant status - список запущенных ВМ
+vagrant ssh appserver - подключение к ВМ appserver
+```
+
+### Провиженеры
+
+Добавил провиженер в Vagrantfile для DB.
+Запуcтил провиженер  
+```
+vagrant provision dbserver
+```
+Добавил плейбук base.yml, в котором описал установку python. И добавил его в site.yml. (Все работало и без этого плейбука)  
+Добавил файл db/tasks/install_mongo.yml, перенес в него таски установки MongoDB из packer_db.yml. Добавил тег **install_mongo**. В файл db/tasks/config_mongo.yml добавил таску с настройкой конфига MongoDB.  
+Аналогичные действия выполним и для роли app. В app/tasks/ruby.yml перенес таски относящиеся к установке ruby. В app/tasks/puma.yml относящиеся к установке puma server.  
+Добавил провиженер в Vagrantfile для APP.  
+Параметризировал конфигурацию, чтобы мы могли использовать ее для другого пользователя, не appuser. То есть во всех файлах заменил **ubuntu** на **{{ deploy_user }}**.  
+Так как плейбуки выполняются из-под пользователя vagrant, поэтому в vagrantfile прописал  
+```
+ansible.extra_vars = {
+          "deploy_user" => "vagrant"
+        }
+```
+### Задание со *
+
+Для передачи параметров nginx в роли jdauphant.nginx  есть два способа:  
+1. Добавить в Vagrantfile  
+```
+ansible.extra_vars = {
+          "deploy_user" => "vagrant",
+          nginx_sites: {
+          default: ["listen 80", "server_name 'reddit'", "location / {proxy_pass http://127.0.0.1:9292;}"]
+        }
+```
+2. Добавить в app/vars/main.yml  
+```
+nginx_sites:
+  default:
+  - listen 80
+  - server_name "reddit"
+  - location / {
+      proxy_pass http://127.0.0.1:9292;
+    }
+```
+В итоге при выполнение *vagrant up* бедут созданы две ВМ (db и app). Для доступа к тестовому приложениею необходимо в баузере ввести **http://192.168.56.120/**  
+
+### Тестирование роли
+
+Для тестирования ролей ansible необходимо установить Molecule, Ansible, Testinfra. Рекомендуется все работы по тестированию проводить в virtualenv.  
+Команды выполняются в каталоге проекта. Использовал следующие версии приложений  
+molecule 3.2.3 using python 3.9
+ansible:2.10.5
+delegated:3.2.3 from molecule
+vagrant:0.6.1 from molecule_vagrant
+```
+pip install virtualenv
+virtualenv venv
+source venv/bin/activate
+pip install -r ansible/requirements.txt
+python -m pip install --upgrade pip
+pip install molecule-vagrant
+pip install 'molecule_vagrant'
+```
+
+Для создания тестов необходимо инициализировать molecule  
+```
+cd ansible/roles/db/
+molecule init scenario default --role-name db -d vagrant
+molecule test
+molecule destroy
+molecule list
+```
+
+Откорректировал db/molecule/default/molecule.yml. Так в методичке описана molecule v2, столкнулся с проблемой несоответствия синтаксиса для v3.  
+Линтеры должны быть списком и в verifier необходимо указать путь к директории с тестами на python  
+```
+lint: |
+  yamllint .
+  ansible-lint
+  flake8
+verifier:
+  name: testinfra
+  directory: ./tests/
+```
+Используемые команды  
+```
+molecule create -создать VM для проверки роли
+molecule list
+molecule login -h instance
+molecule converge - вызывается наша роль к  созданному хосту
+molecule verify
+```
+
+### Самостоятельно  
+
+В файл test_default.py добавил проверку доступности порта 27017.  
+В провиженерах packer изменил путь к плайбукам. Добавил теги  по которым необходимо устанавливать необходимые таски. Также добавил путь к ролям ansible.
+Столкнулся с проблемой, что запускать сборку образов необходимо с корня проекта, когда запускал непосредственно из директории packer, при сборке была ошибка об невозможности найти директорию с ролями.  
+Сборка новых образов  
+```
+packer build -var-file=./packer/variables.json ./packer/db.json
+packer build -var-file=./packer/variables.json ./packer/app.json
+```

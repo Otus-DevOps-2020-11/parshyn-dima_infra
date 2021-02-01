@@ -1,45 +1,9 @@
 ---
-- name: Configure application
+- name: Install MongoDB 4.2
   hosts: all
   become: true
   gather_facts: no
-  tasks:
 
-  - name: Apt Update
-    become: True
-    apt:
-      update-cache: yes
-      force_apt_get: yes
-      cache_valid_time: 3600
-
-  - name: Install a list of packages
-    apt:
-      pkg:
-      - gnupg
-      - apt-transport-https
-      - wget
-      - ca-certificates
-
-  - name: Add an Apt signing key, uses whichever key is at the URL
-    apt_key:
-      url: https://www.mongodb.org/static/pgp/server-4.2.asc
-      state: present
-
-  # Подключаем репозиторий с пакетами mongodb
-  - name: Add APT repository
-    apt_repository:
-      repo: deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.2 multiverse
-      state: present
-
-  # Выполним установку пакета
-  - name: Install mongodb package
-    apt:
-      name: mongodb-org
-      state: present
-
-  # Включаем сервис
-  - name: Configure service supervisor
-    systemd:
-      name: mongod
-      state: started
-      enabled: yes
+  roles:
+    - db
+...

@@ -1,0 +1,16 @@
+---
+- name: Apt Update
+  apt:
+    update-cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+  tags: ruby
+
+- name: Install a list of packages
+  apt:
+    pkg:
+    - ruby-full
+    - ruby-bundler
+    - build-essential
+    - git
+  tags: ruby
